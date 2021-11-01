@@ -141,8 +141,8 @@ Feature: previews of files downloaded through the webdav API
 
   Scenario: set maximum size of previews
     Given user "Alice" has uploaded file "filesForUpload/lorem.txt" to "/parent.txt"
-    When the administrator updates system config key "preview_max_x" with value "null" using the occ command
-    And the administrator updates system config key "preview_max_y" with value "null" using the occ command
+    And the administrator has updated system config key "preview_max_x" with value "null"
+    And the administrator has updated system config key "preview_max_y" with value "null"
     Then the HTTP status code should be "201"
     When user "Alice" downloads the preview of "/parent.txt" with width "null" and height "null" using the WebDAV API
     Then the HTTP status code should be "400"
