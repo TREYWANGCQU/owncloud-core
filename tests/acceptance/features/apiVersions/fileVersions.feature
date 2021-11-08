@@ -483,7 +483,6 @@ Feature: dav-versions
       When user "Alice" gets the number of versions of file "/test/textfile0.txt"
       Then the author of the created version with index "1" should be "Carol"
       Then the author of the created version with index "2" should be "Brian"
-      Then the author of the created version with index "3" should be "Alice"
       And user "Alice" downloads the version of file "/test/textfile0.txt" with the index "1"
       Then the HTTP status code should be "200"
       And the following headers should be set
@@ -495,11 +494,6 @@ Feature: dav-versions
         | header              | value                                                                |
         | Content-Disposition | attachment; filename*=UTF-8''textfile0.txt; filename="textfile0.txt" |
       And the downloaded content should be "uploaded content new"
-      When user "Alice" downloads the version of file "test/textfile0.txt" with the index "3"
-      And the following headers should be set
-        | header              | value                                                                |
-        | Content-Disposition | attachment; filename*=UTF-8''textfile0.txt; filename="textfile0.txt" |
-      And the downloaded content should be "uploaded content"
       When user "Alice" deletes folder "/test/" using the WebDAV API
       Then the HTTP status code should be "204"
       And as "Alice" folder "/test/" should not exist
