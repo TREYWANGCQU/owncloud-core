@@ -209,7 +209,7 @@ class Storage {
 					$user = \OC::$server->getUserSession()->getUser();
 					if ($user !== null && !$users_view->file_exists($versionFileName . '.json')) {
 						$versions = self::getVersions($uid, $filename);
-						$metaDataKey =  sizeof($versions) == 1 ? Constants::CREATED_BY_USER_METADATA : MetaPlugin::VERSION_EDITED_BY_PROPERTYNAME;
+						$metaDataKey =  \sizeof($versions) == 1 ? Constants::CREATED_BY_USER_METADATA : MetaPlugin::VERSION_EDITED_BY_PROPERTYNAME;
 						$metadata = [$metaDataKey => $user->getUID()];
 						$metadataJsonObject = \json_encode($metadata);
 						$users_view->file_put_contents($versionFileName . '.json', $metadataJsonObject);
@@ -238,10 +238,6 @@ class Storage {
 	 */
 	protected static function deleteVersion($view, $path) {
 		$view->unlink($path);
-		/**
-		 * @var \OC\Files\Storage\Storage $storage
-		 * @var string $internalPath
-		 */
 		list($storage, $internalPath) = $view->resolvePath($path);
 		$cache = $storage->getCache($internalPath);
 		$cache->remove($internalPath);
@@ -269,6 +265,7 @@ class Storage {
 						'trigger' => self::DELETE_TRIGGER_MASTER_REMOVED
 					];
 					\OC_Hook::emit('\OCP\Versions', 'preDelete', $hookData);
+					// ????
 					self::deleteVersion($view, $filename . '.v' . $v['version']);
 					if ($view->file_exists($path . ".json")) {
 						$view->unlink($path . ".json");
@@ -357,11 +354,17 @@ class Storage {
 
 		$versionCreated = false;
 
-		//first create a new version
+		//first create a new version and metadata if enabled
 		$version = 'files_versions'.$filename.'.v'.$users_view->filemtime('files'.$filename);
 		if (!$users_view->file_exists($version)) {
-			$users_view->copy('files'.$filename, 'files_versions'.$filename.'.v'.$users_view->filemtime('files'.$filename));
+			$users_view->copy('files'.$filename, $version);
 			$versionCreated = true;
+
+			$metaTargetPath = $version . '.json';
+			$versions = self::getVersions($uid, $filename);
+			$metaDataKey =  \sizeof($versions) == 1 ? Constants::CREATED_BY_USER_METADATA : MetaPlugin::VERSION_EDITED_BY_PROPERTYNAME;
+			$metadataJsonObject = \json_encode([$metaDataKey => $uid]);
+			$users_view->file_put_contents($metaTargetPath, $metadataJsonObject);
 		}
 
 		// Restore encrypted version of the old file for the newly restored file
@@ -383,11 +386,18 @@ class Storage {
 		if (self::copyFileContents($users_view, $fileToRestore, 'files' . $filename)) {
 			$users_view->touch("/files$filename", $revision);
 			Storage::scheduleExpire($uid, $filename);
+
+			$users_view->unlink($fileToRestore . '.json');
+			list($storage, $internalPath) = $users_view->resolvePath($fileToRestore . '.json');
+			$cache = $storage->getCache($internalPath);
+			$cache->remove($internalPath);
+
 			\OC_Hook::emit('\OCP\Versions', 'rollback', [
 				'path' => $filename,
 				'user' => $uid,
 				'revision' => $revision,
 			]);
+
 			return true;
 		} elseif ($versionCreated) {
 			self::deleteVersion($users_view, $version);
