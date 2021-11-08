@@ -67,12 +67,14 @@ class Hooks {
 	 * listen to post-write event.
 	 */
 	public static function post_write_hook($params) {
+		/*
 		if (\OCP\App::isEnabled('files_versions')) {
 			$path = $params[\OC\Files\Filesystem::signal_param_path];
 			if ($path<>'') {
 				Storage::store($path);
 			}
 		}
+		*/
 	}
 
 	/**
